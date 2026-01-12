@@ -160,6 +160,9 @@ def download_video_with_process(url, output_path, quality_str, progress_hook, re
 		"--no-warnings",
 		"--no-check-certificates",
 		"--encoding", "utf-8",
+		"--no-colors",
+		"--progress-template", "download:NVDA_TTDL_PROGRESS:%(progress._percent_str)s|%(progress._total_bytes_str)s|%(progress._speed_str)s|%(progress._eta_str)s",
+		"--print", "after_move:NVDA_TTDL_FILEPATH:%(filepath)s",
 	]
 
 	if remove_watermark:
@@ -183,8 +186,8 @@ def download_video_with_process(url, output_path, quality_str, progress_hook, re
 		stderr=subprocess.STDOUT,
 		text=True,
 		startupinfo=startupinfo,
-		encoding='utf-8',
-		errors='replace'
+		encoding="utf-8",
+		errors="replace",
 	)
 
 	return process

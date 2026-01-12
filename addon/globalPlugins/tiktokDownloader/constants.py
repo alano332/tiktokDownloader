@@ -13,14 +13,33 @@ FINISHED_STATUSES = [STATUS_COMPLETED, STATUS_ERROR, STATUS_STOPPED, STATUS_INTE
 
 
 def is_active_status(status):
+	if not status:
+		return False
 	for s in ACTIVE_STATUSES:
-		if s in status:
+		if status == s or (isinstance(status, str) and s in status):
 			return True
 	return False
 
 
 def is_finished_status(status):
+	if not status:
+		return False
 	for s in FINISHED_STATUSES:
-		if s in status:
+		if status == s or (isinstance(status, str) and s in status):
 			return True
 	return False
+
+
+def guess_state_from_status_text(statusText: str) -> str:
+	if not statusText:
+		return STATUS_INTERRUPTED
+
+	for s in FINISHED_STATUSES:
+		if s in statusText:
+			return s
+
+	for s in ACTIVE_STATUSES:
+		if s in statusText:
+			return s
+
+	return STATUS_INTERRUPTED

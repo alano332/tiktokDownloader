@@ -1,20 +1,11 @@
-# Python
-__pycache__/
-*.pyc
-
-# Binaries
-bin/
-globalPlugins/youtubeDownloader/bin/
-*.exe
-*.dll
-*.zip
-
-# Addon Packing
+addon/doc/*.css
+addon/doc/en/
+*_docHandler.py
+*.html
+manifest.ini
+*.mo
+*.pot
+*.py[co]
 *.nvda-addon
-.vscode/
-secrets.py
-packet_sdk/
-
-# Logs
-*.log
-install.log
+.sconsign.dblite
+/[0-9]*.[0-9]*.[0-9]*.json

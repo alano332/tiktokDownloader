@@ -28,8 +28,8 @@ class DownloaderDialog(wx.Dialog):
 		lbl_url = wx.StaticText(panel, label=_("Enter TikTok video link:"))
 		self.txt_url = wx.TextCtrl(panel, value=url)
 		self.txt_url.SetName(_("Enter TikTok video link"))
-		vbox.Add(lbl_url, flag=wx.LEFT|wx.TOP, border=10)
-		vbox.Add(self.txt_url, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
+		vbox.Add(lbl_url, flag=wx.LEFT | wx.TOP, border=10)
+		vbox.Add(self.txt_url, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=10)
 
 		hbox_options = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -60,7 +60,7 @@ class DownloaderDialog(wx.Dialog):
 		watermark_box.Add(self.chk_watermark, flag=wx.TOP, border=20)
 		hbox_options.Add(watermark_box, proportion=1)
 
-		vbox.Add(hbox_options, flag=wx.EXPAND|wx.LEFT|wx.RIGHT, border=10)
+		vbox.Add(hbox_options, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
 
 		hbox_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -72,10 +72,10 @@ class DownloaderDialog(wx.Dialog):
 		self.btn_open_folder.Bind(wx.EVT_BUTTON, self.on_open_folder)
 		hbox_buttons.Add(self.btn_open_folder)
 
-		vbox.Add(hbox_buttons, flag=wx.ALIGN_CENTER|wx.ALL, border=10)
+		vbox.Add(hbox_buttons, flag=wx.ALIGN_CENTER | wx.ALL, border=10)
 
 		self.lbl_queue_status = wx.StaticText(panel, label="")
-		vbox.Add(self.lbl_queue_status, flag=wx.LEFT|wx.BOTTOM, border=10)
+		vbox.Add(self.lbl_queue_status, flag=wx.LEFT | wx.BOTTOM, border=10)
 
 		lbl_list = wx.StaticText(panel, label=_("Downloads:"))
 		vbox.Add(lbl_list, flag=wx.LEFT, border=10)
@@ -89,7 +89,7 @@ class DownloaderDialog(wx.Dialog):
 		self.list_downloads.Bind(wx.EVT_KEY_DOWN, self.on_list_key)
 		self.list_downloads.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_list_activated)
 
-		vbox.Add(self.list_downloads, proportion=1, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
+		vbox.Add(self.list_downloads, proportion=1, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=10)
 
 		hbox_controls = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -114,7 +114,7 @@ class DownloaderDialog(wx.Dialog):
 		hbox_controls.Add(self.btn_remove, flag=wx.RIGHT, border=5)
 		hbox_controls.Add(self.btn_open_location)
 
-		vbox.Add(hbox_controls, flag=wx.ALIGN_CENTER|wx.BOTTOM, border=10)
+		vbox.Add(hbox_controls, flag=wx.ALIGN_CENTER | wx.BOTTOM, border=10)
 
 		hbox_batch = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -127,17 +127,17 @@ class DownloaderDialog(wx.Dialog):
 		hbox_batch.Add(self.btn_clear_completed, flag=wx.RIGHT, border=5)
 		hbox_batch.Add(self.btn_stop_all)
 
-		vbox.Add(hbox_batch, flag=wx.ALIGN_CENTER|wx.BOTTOM, border=10)
+		vbox.Add(hbox_batch, flag=wx.ALIGN_CENTER | wx.BOTTOM, border=10)
 
 		self.gauge = wx.Gauge(panel, range=100, size=(250, 25))
-		vbox.Add(self.gauge, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM, border=10)
+		vbox.Add(self.gauge, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=10)
 
 		self.lbl_status = wx.StaticText(panel, label="")
-		vbox.Add(self.lbl_status, flag=wx.LEFT|wx.BOTTOM, border=10)
+		vbox.Add(self.lbl_status, flag=wx.LEFT | wx.BOTTOM, border=10)
 
 		self.btn_close = wx.Button(panel, id=wx.ID_CANCEL, label=_("Close"))
 		self.btn_close.Bind(wx.EVT_BUTTON, self.on_close)
-		vbox.Add(self.btn_close, flag=wx.ALIGN_CENTER|wx.BOTTOM, border=10)
+		vbox.Add(self.btn_close, flag=wx.ALIGN_CENTER | wx.BOTTOM, border=10)
 
 		panel.SetSizer(vbox)
 
@@ -158,14 +158,14 @@ class DownloaderDialog(wx.Dialog):
 		self.list_downloads.DeleteAllItems()
 		self.list_map = []
 
-		for d_id, data in self.plugin.downloads.items():
-			self.add_download_item(d_id, data['title'], data.get('status', ''))
+		for d_id, data in self.plugin.iter_downloads_snapshot():
+			self.add_download_item(d_id, data.get("title", ""), data.get("status", ""))
 
 		self.update_button_states()
 
 	def add_download_item(self, d_id, title, status=None):
-		if status is None:
-			status = STATUS_STARTING
+		if status is None or not status:
+			status = STATUS_QUEUED
 		idx = self.list_downloads.InsertItem(self.list_downloads.GetItemCount(), status)
 		self.list_downloads.SetItem(idx, 1, "0%")
 		self.list_map.append(d_id)
@@ -197,7 +197,7 @@ class DownloaderDialog(wx.Dialog):
 				self.gauge.SetValue(int(percent))
 			elif STATUS_COMPLETED in status_text:
 				self.gauge.SetValue(100)
-			elif STATUS_STARTING in status_text:
+			elif STATUS_STARTING in status_text or STATUS_QUEUED in status_text:
 				self.gauge.SetValue(0)
 			self.update_button_states()
 
@@ -217,13 +217,14 @@ class DownloaderDialog(wx.Dialog):
 		idx = self.list_downloads.GetFirstSelected()
 		if idx != -1 and idx < len(self.list_map):
 			d_id = self.list_map[idx]
-			if d_id in self.plugin.downloads:
-				data = self.plugin.downloads[d_id]
-				self.lbl_status.SetLabel(data.get('status', ''))
-				if STATUS_COMPLETED in data.get('status', ''):
+			data = self.plugin.get_download_snapshot(d_id)
+			if data:
+				self.lbl_status.SetLabel(data.get("status", ""))
+				if STATUS_COMPLETED in data.get("status", ""):
 					self.gauge.SetValue(100)
 				else:
-					self.gauge.SetValue(0)
+					p = data.get("progress")
+					self.gauge.SetValue(int(p) if isinstance(p, (int, float)) else 0)
 
 	def on_list_key(self, event):
 		key = event.GetKeyCode()
@@ -236,10 +237,9 @@ class DownloaderDialog(wx.Dialog):
 		idx = self.list_downloads.GetFirstSelected()
 		if idx != -1 and idx < len(self.list_map):
 			d_id = self.list_map[idx]
-			if d_id in self.plugin.downloads:
-				status = self.plugin.downloads[d_id].get('status', '')
-				if STATUS_COMPLETED in status:
-					self.plugin.open_file_location(d_id)
+			data = self.plugin.get_download_snapshot(d_id)
+			if data and STATUS_COMPLETED in (data.get("status") or ""):
+				self.plugin.open_file_location(d_id)
 
 	def update_button_states(self):
 		idx = self.list_downloads.GetFirstSelected()
@@ -251,20 +251,17 @@ class DownloaderDialog(wx.Dialog):
 
 		if idx != -1 and idx < len(self.list_map):
 			d_id = self.list_map[idx]
-			if d_id in self.plugin.downloads:
-				status = self.plugin.downloads[d_id].get('status', '')
+			data = self.plugin.get_download_snapshot(d_id)
+			if data:
+				state = data.get("state") or data.get("status", "")
+				active = is_active_status(state)
 
-				active = is_active_status(status)
-
-				if not active and STATUS_COMPLETED not in status:
+				if not active and STATUS_COMPLETED not in (data.get("status", "") or ""):
 					can_retry = True
-
 				if active:
 					can_stop = True
-
 				can_remove = True
-
-				if STATUS_COMPLETED in status:
+				if STATUS_COMPLETED in (data.get("status", "") or ""):
 					can_open = True
 
 		self.btn_retry.Enable(can_retry)
